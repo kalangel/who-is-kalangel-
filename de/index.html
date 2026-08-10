@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>kalangel</title>
+    <meta name="description" content="Die Finsternis hält an. Die Beobachtung läuft." />
+    <meta name="theme-color" content="#050302" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="kalangel" />
+    <meta property="og:description" content="Die Finsternis hält an. Die Beobachtung läuft." />
+    <!-- og:image — кадр полной фазы, добавляется на этапе аудита -->
+
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <canvas id="stage" aria-hidden="true"></canvas>
+    <div id="wordmark"></div>
+
+    <div class="plate">
+      <p class="mono" data-t="corner.mark"></p>
+      <div class="right">
+        <p class="mono" data-t="corner.time"></p>
+        <p class="mono" id="clock"></p>
+      </div>
+    </div>
+
+    <main>
+      <section class="phase phase--first">
+        <p class="mono label" data-t="hero.label"></p>
+        <h1 class="line" data-t="hero.line"></h1>
+        <p class="mono scroll-hint" data-t="hero.scroll"></p>
+      </section>
+
+      <section class="phase phase--totality">
+        <p class="mono label" data-t="p2.label"></p>
+        <h2 class="line" data-t="p2.line"></h2>
+        <p class="mono" data-t="p2.note"></p>
+      </section>
+    </main>
+
+    <script type="module" src="../src/main.ts"></script>
+  </body>
+</html>

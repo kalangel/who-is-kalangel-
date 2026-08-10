@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>kalangel</title>
+    <meta name="theme-color" content="#050302" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #050302;
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      Корень определяет язык по настройкам браузера и перебрасывает.
+      Это маршрутизация по умолчанию, а не переключатель: сменить язык
+      можно только адресом — /ru/, /en/, /de/.
+    -->
+    <noscript>
+      <p style="color: #e7ddd2; font: 14px monospace; padding: 24px">
+        <a href="./en/" style="color: #fff4e2">EN</a> ·
+        <a href="./ru/" style="color: #fff4e2">RU</a> ·
+        <a href="./de/" style="color: #fff4e2">DE</a>
+      </p>
+    </noscript>
+    <script type="module" src="./src/redirect.ts"></script>
+  </body>
+</html>
