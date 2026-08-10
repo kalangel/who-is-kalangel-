@@ -99,6 +99,44 @@ interface Giant {
   /** Вес звезды: величина на карте. Одинаковые точки читаются бусами. */
   mag: number
   tw: number
+  /** Спектральный класс: цвет гало и лучей. */
+  hue: SpectralClass
+  /** Наклон лучей дифракции. Одинаковый угол у всех выдаёт штамп. */
+  spin: number
+}
+
+/**
+ * Спектральные классы, а не «жёлтый». Настоящие гиганты разного цвета, и
+ * именно разброс делает небо небом: голубые сверхгиганты, белые, жёлтые,
+ * оранжевые и красные.
+ *
+ * `glow` — цвет гало и лучей, `core` — цвет ядра. Ядро у всех почти белое:
+ * яркая звезда выбивает середину в белизну независимо от класса, цвет
+ * остаётся только по краям. Без этого звезда читается цветным кружком.
+ */
+interface SpectralClass {
+  glow: [number, number, number]
+  core: [number, number, number]
+}
+
+const SPECTRAL: Array<{ w: number; c: SpectralClass }> = [
+  // Голубой сверхгигант — редкость, но именно он ломает жёлтую монотонность.
+  { w: 0.1, c: { glow: [122, 158, 255], core: [232, 240, 255] } },
+  { w: 0.12, c: { glow: [176, 200, 255], core: [244, 248, 255] } },
+  { w: 0.16, c: { glow: [236, 240, 255], core: [255, 255, 255] } },
+  { w: 0.24, c: { glow: [255, 226, 158], core: [255, 250, 236] } },
+  { w: 0.22, c: { glow: [255, 170, 92], core: [255, 236, 206] } },
+  // Красный гигант — самый крупный на вид и самый тусклый по ядру.
+  { w: 0.16, c: { glow: [255, 108, 62], core: [255, 214, 178] } },
+]
+
+function pickSpectral(r: number): SpectralClass {
+  let acc = 0
+  for (const s of SPECTRAL) {
+    acc += s.w
+    if (r <= acc) return s.c
+  }
+  return SPECTRAL[SPECTRAL.length - 1].c
 }
 
 /**
@@ -128,6 +166,8 @@ function placeGiants(outline: Array<[number, number]>, count: number): Giant[] {
       // Четыре-пять крупных держат рисунок, прочие мельче.
       mag: rnd() < 0.28 ? 1 : 0.45 + rnd() * 0.3,
       tw: rnd() * Math.PI * 2,
+      hue: pickSpectral(rnd()),
+      spin: (rnd() - 0.5) * 0.9,
     })
   }
   // Вершины лучей обязаны быть яркими — иначе марка не читается.
@@ -137,7 +177,14 @@ function placeGiants(outline: Array<[number, number]>, count: number): Giant[] {
     [0, 1],
     [-0.42, 0],
   ]) {
-    giants.push({ x: tx, y: ty, mag: 1.25, tw: rnd() * Math.PI * 2 })
+    giants.push({
+      x: tx,
+      y: ty,
+      mag: 1.25,
+      tw: rnd() * Math.PI * 2,
+      hue: pickSpectral(rnd()),
+      spin: (rnd() - 0.5) * 0.9,
+    })
   }
   return giants
 }
@@ -267,6 +314,26 @@ export function createScene(canvas: HTMLCanvasElement, wordmark: HTMLElement): S
       // диске гранулы превращаются в грязь.
       const surf = reveal * (1 - pull)
       if (surf > 0.02) drawSurface(cx, cy, starR, t, surf)
+
+      // На отъезде наша звезда становится одной из гигантов — и обязана
+      // выглядеть так же. Голый диск рядом с ними читался плоским шариком.
+      if (pull > 0.15) {
+        ctx.globalCompositeOperation = 'lighter'
+        drawGiant(
+          cx,
+          cy,
+          starR * 0.9,
+          {
+            x: 0,
+            y: 0,
+            mag: 1.4,
+            tw: 0,
+            hue: { glow: [255, 150, 74], core: [255, 238, 208] },
+            spin: 0.22,
+          },
+          pull * (1 - collapse),
+        )
+      }
     }
 
     // ── 4. тело затмения ─────────────────────────────────────────────
@@ -408,28 +475,75 @@ export function createScene(canvas: HTMLCanvasElement, wordmark: HTMLElement): S
     for (const g of giants) {
       const x = cx + g.x * scale
       const y = cy + g.y * scale
-      if (x < -80 || x > w + 80 || y < -80 || y > h + 80) continue
+      if (x < -140 || x > w + 140 || y < -140 || y > h + 140) continue
 
-      const tw = reduced ? 1 : 0.8 + 0.2 * Math.sin(t * 0.55 + g.tw)
-      const r = unit * 0.0045 * g.mag * (0.6 + 0.4 * form) * tw
-      const glow = r * 8
-      const grd = ctx.createRadialGradient(x, y, 0, x, y, glow)
-      grd.addColorStop(0, `rgba(255, 246, 232, ${a * tw})`)
-      grd.addColorStop(0.18, `rgba(255, 198, 128, ${a * 0.4 * tw})`)
-      grd.addColorStop(1, 'rgba(255, 138, 31, 0)')
-      ctx.fillStyle = grd
-      ctx.fillRect(x - glow, y - glow, glow * 2, glow * 2)
-
-      // Лучики у самых крупных — то, что отличает звезду от кружка.
-      if (g.mag > 0.95) {
-        ctx.globalAlpha = a * 0.5 * tw
-        ctx.fillStyle = 'rgba(255, 240, 214, 1)'
-        const l = r * 9
-        ctx.fillRect(x - l, y - 0.5, l * 2, 1)
-        ctx.fillRect(x - 0.5, y - l * 0.7, 1, l * 1.4)
-        ctx.globalAlpha = 1
-      }
+      const tw = reduced ? 1 : 0.82 + 0.18 * Math.sin(t * 0.55 + g.tw)
+      drawGiant(x, y, unit * 0.006 * g.mag * (0.6 + 0.4 * form) * tw, g, a * tw)
     }
+  }
+
+  /**
+   * Строение звезды, а не размытый кружок. Четыре слоя, и каждый отвечает
+   * за свою часть узнаваемости:
+   *
+   *  1. широкое цветное гало — единственное место, где виден спектральный класс;
+   *  2. плотный ореол — отделяет звезду от гало, иначе она расплывается;
+   *  3. лучи дифракции — то, чем звезда отличается от точки. Длина зависит от
+   *     величины, угол свой у каждой: одинаковый наклон читается штампом;
+   *  4. почти белое ядро — яркая звезда выбивает середину независимо от цвета.
+   */
+  function drawGiant(x: number, y: number, r: number, g: Giant, a: number) {
+    const [gr, gg, gb] = g.hue.glow
+    const [cr, cg, cb] = g.hue.core
+
+    // 1. гало
+    const halo = r * 9
+    const h1 = ctx.createRadialGradient(x, y, 0, x, y, halo)
+    h1.addColorStop(0, `rgba(${gr}, ${gg}, ${gb}, ${a * 0.5})`)
+    h1.addColorStop(0.22, `rgba(${gr}, ${gg}, ${gb}, ${a * 0.16})`)
+    h1.addColorStop(1, `rgba(${gr}, ${gg}, ${gb}, 0)`)
+    ctx.fillStyle = h1
+    ctx.fillRect(x - halo, y - halo, halo * 2, halo * 2)
+
+    // 2. плотный ореол
+    const near = r * 2.6
+    const h2 = ctx.createRadialGradient(x, y, 0, x, y, near)
+    h2.addColorStop(0, `rgba(${cr}, ${cg}, ${cb}, ${a})`)
+    h2.addColorStop(0.45, `rgba(${gr}, ${gg}, ${gb}, ${a * 0.6})`)
+    h2.addColorStop(1, `rgba(${gr}, ${gg}, ${gb}, 0)`)
+    ctx.fillStyle = h2
+    ctx.fillRect(x - near, y - near, near * 2, near * 2)
+
+    // 3. лучи дифракции
+    ctx.save()
+    ctx.translate(x, y)
+    ctx.rotate(g.spin)
+    // Потолок по короткой стороне обязателен: длина считается от радиуса, а у
+    // близкой звезды он вдесятеро больше, чем у дальней, — без ограничения
+    // лучи превращаются в прожекторы через весь экран.
+    const long = Math.min(r * (7 + g.mag * 6), unit * 0.2)
+    const short = long * 0.42
+    for (const [len, thick] of [
+      [long, Math.max(0.6, Math.min(r * 0.16, 2.4))],
+      [short, Math.max(0.5, Math.min(r * 0.12, 1.8))],
+    ] as const) {
+      const spike = ctx.createLinearGradient(-len, 0, len, 0)
+      spike.addColorStop(0, `rgba(${gr}, ${gg}, ${gb}, 0)`)
+      spike.addColorStop(0.5, `rgba(${cr}, ${cg}, ${cb}, ${a * 0.42})`)
+      spike.addColorStop(1, `rgba(${gr}, ${gg}, ${gb}, 0)`)
+      ctx.fillStyle = spike
+      ctx.fillRect(-len, -thick / 2, len * 2, thick)
+      ctx.rotate(Math.PI / 2)
+    }
+    ctx.restore()
+
+    // 4. ядро
+    const core = ctx.createRadialGradient(x, y, 0, x, y, r * 0.9)
+    core.addColorStop(0, `rgba(255, 255, 255, ${a})`)
+    core.addColorStop(0.5, `rgba(${cr}, ${cg}, ${cb}, ${a * 0.9})`)
+    core.addColorStop(1, `rgba(${cr}, ${cg}, ${cb}, 0)`)
+    ctx.fillStyle = core
+    ctx.fillRect(x - r, y - r, r * 2, r * 2)
   }
 
   function drawField(x: number, y: number, size: number, rot: number, alpha: number) {
