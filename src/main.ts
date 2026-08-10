@@ -37,6 +37,28 @@ if (clock) {
   setInterval(tick, 1000)
 }
 
+// Плитка зерна: монохромный шум, склеивается сама с собой по краям за счёт
+// повтора. 128 достаточно, чтобы повтор не читался, и это 16 КБ памяти.
+{
+  const size = 128
+  const c = document.createElement('canvas')
+  c.width = c.height = size
+  const g = c.getContext('2d')!
+  const img = g.createImageData(size, size)
+  for (let i = 0; i < img.data.length; i += 4) {
+    const v = 110 + Math.random() * 145
+    img.data[i] = img.data[i + 1] = img.data[i + 2] = v
+    img.data[i + 3] = 255
+  }
+  g.putImageData(img, 0, 0)
+
+  const grain = document.createElement('div')
+  grain.className = 'grain'
+  grain.setAttribute('aria-hidden', 'true')
+  grain.style.backgroundImage = `url(${c.toDataURL()})`
+  document.body.append(grain)
+}
+
 bindTimeline(eclipse)
 
 // Ссылка на канал ещё не выдана. Пока её нет, CTA остаётся текстом:

@@ -105,6 +105,12 @@ export function createEclipse(canvas: HTMLCanvasElement, wordmark: HTMLElement):
 
     const cx = w / 2
     const cy = h / 2
+
+    // КАМЕРА. Спека до этого запрещала объекту двигаться вообще — и именно
+    // это правило оказалось потолком: одна неподвижная рамка на весь сайт
+    // читается как заставка, а не как сцена. Наезд слабый и медленный,
+    // объект по-прежнему в центре, но кадрирование меняется.
+    const zoom = 1 + 0.16 * smoothstep(0, 1, phase)
     const bodyR = starR * BODY_RATIO
 
     // Смещение тела вдоль оси. Степенная кривая держит кольцо целым первую
@@ -126,6 +132,11 @@ export function createEclipse(canvas: HTMLCanvasElement, wordmark: HTMLElement):
     ctx.globalCompositeOperation = 'source-over'
     ctx.fillStyle = BG
     ctx.fillRect(0, 0, w, h)
+
+    ctx.save()
+    ctx.translate(cx, cy)
+    ctx.scale(zoom, zoom)
+    ctx.translate(-cx, -cy)
 
     // 2. корона. Она видна, пока светило закрыто: открытый свет её забивает.
     const coronaAlpha = 1 - open * 0.6
@@ -218,6 +229,17 @@ export function createEclipse(canvas: HTMLCanvasElement, wordmark: HTMLElement):
       ctx.fillStyle = flood
       ctx.fillRect(0, 0, w, h)
     }
+
+    ctx.restore()
+
+    // 7. виньетка. Уводит углы в глубину и собирает взгляд к центру —
+    // без неё ровная заливка фона читается как пустая плоскость.
+    const vign = ctx.createRadialGradient(cx, cy, Math.min(w, h) * 0.32, cx, cy, Math.max(w, h) * 0.78)
+    vign.addColorStop(0, 'rgba(5, 3, 2, 0)')
+    vign.addColorStop(1, 'rgba(5, 3, 2, 0.72)')
+    ctx.globalCompositeOperation = 'source-over'
+    ctx.fillStyle = vign
+    ctx.fillRect(0, 0, w, h)
 
     if (veil > 0) {
       // Умножение, а не плёнка поверх. Полупрозрачный почти чёрный сводит

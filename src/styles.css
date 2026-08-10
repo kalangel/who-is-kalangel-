@@ -123,6 +123,53 @@ main {
   margin-bottom: 0.9rem;
 }
 
+/* Маска для выезда строк. Проявление одной непрозрачностью — самый дешёвый
+   из приёмов, его видно сразу; текст должен выходить из-под края. */
+.masked {
+  overflow: hidden;
+}
+
+.reveal {
+  display: block;
+  will-change: transform, opacity;
+}
+
+/* Зерно. Ровные градиенты без фактуры читаются как рендер, а не как снимок.
+   Плитка генерируется в рантайме — ни одного лишнего запроса. */
+.grain {
+  position: fixed;
+  inset: -50%;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0.055;
+  mix-blend-mode: overlay;
+  background-repeat: repeat;
+  animation: grain-jitter 0.7s steps(5) infinite;
+}
+
+/* Плёночное зерно дёргается, а не ползёт: плавный сдвиг читается как
+   текстура, елозящая по экрану. */
+@keyframes grain-jitter {
+  0% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(-4%, 3%);
+  }
+  40% {
+    transform: translate(3%, -5%);
+  }
+  60% {
+    transform: translate(-6%, -2%);
+  }
+  80% {
+    transform: translate(5%, 4%);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
 /* Единственное целевое действие сайта. Мелким серым оно читалось подписью
    к предыдущей строке, а не действием: даём ему вес и собственную линию. */
 .cta {
