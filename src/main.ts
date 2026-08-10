@@ -1,7 +1,11 @@
 import './styles.css'
 import { createEclipse, type Eclipse } from './eclipse'
 import { applyContent, detectLang } from './i18n'
+import { bindTimeline } from './timeline'
 import { WORDMARK_SVG } from './wordmark'
+
+/** Канал ещё не выдан. Впиши сюда https://t.me/… и CTA станет ссылкой. */
+const TELEGRAM_URL: string = ''
 
 const lang = detectLang()
 document.documentElement.lang = lang
@@ -33,23 +37,24 @@ if (clock) {
   setInterval(tick, 1000)
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// ОСТАВЛЕНО НА MOTION — единственная невыполненная анимация проекта.
-//
-// Скролл-таймлайн гонит phase от 0 к 1 и разводит появление текста по
-// фазам (см. docs/eclipse-spec.md, разделы 5 и 7):
-//
-//   import { scroll, animate } from 'motion'
-//   scroll(({ y }) => eclipse.setPhase(y.progress))
-//
-// Пока таймлайна нет, phase зафиксирована на 0.5 — полная фаза. Кадр живой
-// за счёт вращения короны, но по скроллу не меняется. Это ожидаемое
-// состояние, а не недоделка.
-// ─────────────────────────────────────────────────────────────────────
+bindTimeline(eclipse)
+
+// Ссылка на канал ещё не выдана. Пока её нет, CTA остаётся текстом:
+// мёртвая ссылка хуже её отсутствия, а ссылка «куда-нибудь» — хуже обеих.
+if (TELEGRAM_URL) {
+  document.querySelectorAll<HTMLElement>('.cta').forEach((el) => {
+    const a = document.createElement('a')
+    a.href = TELEGRAM_URL
+    a.rel = 'noopener'
+    a.target = '_blank'
+    a.textContent = el.textContent
+    el.replaceChildren(a)
+  })
+}
 
 // Точка входа не импортируется, поэтому единственный способ отдать рендер
-// файлу с таймлайном — объявленный глобал. Именно объявленный: с типом и
-// в своём пространстве имён, а не подброшенный в window россыпью.
+// наружу — объявленный глобал. Именно объявленный: с типом и в своём
+// пространстве имён, а не подброшенный в window россыпью.
 declare global {
   interface Window {
     kalangel?: { eclipse: Eclipse }

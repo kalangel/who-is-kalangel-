@@ -29,18 +29,42 @@
       </div>
     </div>
 
-    <main>
-      <section class="phase phase--first">
-        <p class="mono label" data-t="hero.label"></p>
-        <h1 class="line" data-t="hero.line"></h1>
-        <p class="mono scroll-hint" data-t="hero.scroll"></p>
+    <!-- Такты стоят на месте и сменяют друг друга. Скролл — это скраббер
+         по одной сцене, а не лента секций. -->
+    <div class="beats">
+      <section class="beat">
+        <p class="mono label" data-t="b1.label"></p>
+        <h1 class="line" data-t="b1.line"></h1>
       </section>
+      <section class="beat">
+        <p class="mono label" data-t="b2.label"></p>
+        <h2 class="line" data-t="b2.line"></h2>
+      </section>
+      <section class="beat">
+        <p class="mono label" data-t="b3.label"></p>
+        <h2 class="line" data-t="b3.line"></h2>
+      </section>
+      <section class="beat">
+        <p class="mono label" data-t="b4.label"></p>
+        <h2 class="line" data-t="b4.line"></h2>
+      </section>
+      <section class="beat beat--end">
+        <p class="mono label" data-t="b5.label"></p>
+        <h2 class="line" data-t="b5.line"></h2>
+        <!-- TODO: подставить настоящую ссылку на канал (см. README) -->
+        <p class="mono cta" data-t="b5.cta"></p>
+      </section>
+    </div>
 
-      <section class="phase phase--totality">
-        <p class="mono label" data-t="p2.label"></p>
-        <h2 class="line" data-t="p2.line"></h2>
-        <p class="mono" data-t="p2.note"></p>
-      </section>
+    <p class="mono scroll-hint" data-t="hero.scroll"></p>
+
+    <!-- Пустые якоря дают высоту прокрутки и точки привязки для тактов. -->
+    <main aria-hidden="true">
+      <div class="anchor"></div>
+      <div class="anchor"></div>
+      <div class="anchor"></div>
+      <div class="anchor"></div>
+      <div class="anchor"></div>
     </main>
 
     <script type="module" src="../src/main.ts"></script>

@@ -21,7 +21,7 @@
      Радиус тёмного диска выводится из неё: R = W / 1.6.
      Всё остальное считается от R. */
   --wm-w: clamp(220px, 46vw, 460px);
-  --disc-r: calc(var(--wm-w) / 1.6);
+  --star-r: calc(var(--wm-w) / 1.6);
 
   --pad: clamp(20px, 4vw, 56px);
 
@@ -87,9 +87,60 @@ body {
   height: auto;
 }
 
+/* Якоря не видны и ничего не содержат — они только дают высоту прокрутки
+   и точки привязки для тактов. Пять экранов: столько нужно, чтобы проход
+   тела читался как движение, а не как рывок. */
 main {
   position: relative;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.anchor {
+  height: 100svh;
+}
+
+.beats {
+  position: fixed;
+  inset: 0;
   z-index: 1;
+  pointer-events: none;
+}
+
+.beat {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 0 var(--pad);
+  opacity: 0;
+  will-change: opacity, filter;
+}
+
+.beat .label {
+  margin-bottom: 0.9rem;
+}
+
+/* Единственное целевое действие сайта. Мелким серым оно читалось подписью
+   к предыдущей строке, а не действием: даём ему вес и собственную линию. */
+.cta {
+  margin-top: 1.8rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid rgba(255, 138, 31, 0.45);
+  font-size: 12px;
+  color: var(--core);
+  pointer-events: auto;
+}
+
+.cta a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.cta a:hover {
+  color: var(--hot);
 }
 
 /* ---------- разметка по краям пластинки ---------- */
@@ -123,87 +174,36 @@ main {
   font-variant-numeric: tabular-nums;
 }
 
-/* ---------- фазы ---------- */
-
-.phase {
-  min-height: 100svh;
-  padding: 0 var(--pad);
-  display: flex;
-  flex-direction: column;
-}
-
-/* Фаза 01: подпись над объектом, фраза под ним.
-   Отступы считаются от радиуса диска, поэтому текст никогда не наезжает
-   на кольцо, какой бы ширины ни был логотип. */
-
-.phase--first {
-  justify-content: flex-start;
-  align-items: center;
-  text-align: center;
-}
-
-.phase--first .label {
-  margin-top: calc(50svh - var(--disc-r) - 4.5rem);
-}
-
-.phase--first .line {
-  margin-top: calc(var(--disc-r) * 2 + 3.5rem);
-}
-
+/* Строка такта: мера в знаках, колонка обязана кончиться раньше кольца —
+   центр принадлежит объекту, а не тексту. */
 .line {
   font-family: var(--serif);
   font-weight: 400;
-  font-size: clamp(1.5rem, 3.4vw, 2.75rem);
-  line-height: 1.15;
+  font-size: clamp(1.5rem, 3.2vw, 2.6rem);
+  line-height: 1.14;
   letter-spacing: -0.01em;
-  max-width: 18ch;
   margin: 0;
+  max-width: min(15ch, calc(50vw - var(--star-r) - var(--pad) * 2));
   text-wrap: balance;
 }
 
 .scroll-hint {
-  margin: auto 0 calc(var(--pad) + 0.5rem);
+  position: fixed;
+  left: 50%;
+  translate: -50% 0;
+  bottom: calc(var(--pad) + 0.25rem);
+  z-index: 3;
 }
 
-/* Фаза 02: текст уходит к левому краю — как разметка по эмульсии,
-   центр остаётся объекту. */
-
-.phase--totality {
-  justify-content: center;
-  align-items: flex-start;
-  text-align: left;
-}
-
-/* Колонка обязана кончиться раньше, чем начнётся кольцо: от середины экрана
-   отступаем на радиус тела плюс поле. Иначе строка въезжает в лимб — центр
-   принадлежит объекту, а не тексту. */
-.phase--totality .mono {
-  max-width: calc(50vw - var(--disc-r) - var(--pad) * 2);
-}
-
-/* У серифа мера считается в знаках, у моно — нет: 16ch десятипиксельного
-   моноширинного это 96px, и подпись рассыпается в столбик. */
-.phase--totality .line {
-  max-width: min(16ch, calc(50vw - var(--disc-r) - var(--pad) * 2));
-  margin: 0.9rem 0 1.4rem;
-  font-size: clamp(1.3rem, 2.1vw, 1.9rem);
-}
-
-/* На узком экране объект занимает центр целиком — уводим текст вниз,
-   чтобы он не лёг поверх кольца. */
+/* На узком экране объект занимает центр целиком — такт уходит под него. */
 @media (max-width: 700px) {
-  .phase--totality {
+  .beat {
     justify-content: flex-end;
-    padding-bottom: calc(var(--pad) + 3rem);
+    padding-bottom: calc(var(--pad) + 3.5rem);
   }
 
-  /* Внизу экрана объект уже не мешает — колонку можно распустить. */
-  .phase--totality .line,
-  .phase--totality .mono {
-    max-width: 22ch;
-  }
-
-  .phase--totality .line {
+  .line {
+    max-width: 20ch;
     font-size: clamp(1.5rem, 7vw, 2.1rem);
   }
 }
