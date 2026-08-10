@@ -1,16 +1,4 @@
 {
-  "corner.mark": "BEOBACHTUNG",
-  "corner.time": "ORTSZEIT",
   "hero.scroll": "ABWÄRTS",
-  "b1.label": "TOTALITÄT",
-  "b1.line": "Das Licht ist verdeckt. Nur der Rand bleibt.",
-  "b2.label": "DER RING BRICHT",
-  "b2.line": "Der Ring gibt nach.",
-  "b3.label": "DIAMANTRING",
-  "b3.line": "Ein Punkt. Das genügt.",
-  "b4.label": "DRITTER KONTAKT",
-  "b4.line": "Das Licht kehrt auf einmal zurück.",
-  "b5.label": "BEOBACHTUNG BEENDET",
-  "b5.line": "Es geht im Kanal weiter.",
-  "b5.cta": "TELEGRAM →"
+  "cta": "TELEGRAM →"
 }

@@ -21,45 +21,21 @@
     <canvas id="stage" aria-hidden="true"></canvas>
     <div id="wordmark"></div>
 
-    <div class="plate">
-      <p class="mono" data-t="corner.mark"></p>
-      <div class="right">
-        <p class="mono" data-t="corner.time"></p>
-        <p class="mono" id="clock"></p>
-      </div>
-    </div>
-
-    <!-- Такты стоят на месте и сменяют друг друга. Скролл — это скраббер
-         по одной сцене, а не лента секций. -->
-    <div class="beats">
-      <section class="beat">
-        <p class="mono label" data-t="b1.label"></p>
-        <h1 class="line" data-t="b1.line"></h1>
-      </section>
-      <section class="beat">
-        <p class="mono label" data-t="b2.label"></p>
-        <h2 class="line" data-t="b2.line"></h2>
-      </section>
-      <section class="beat">
-        <p class="mono label" data-t="b3.label"></p>
-        <h2 class="line" data-t="b3.line"></h2>
-      </section>
-      <section class="beat">
-        <p class="mono label" data-t="b4.label"></p>
-        <h2 class="line" data-t="b4.line"></h2>
-      </section>
-      <section class="beat beat--end">
-        <p class="mono label" data-t="b5.label"></p>
-        <h2 class="line" data-t="b5.line"></h2>
-        <!-- TODO: подставить настоящую ссылку на канал (см. README) -->
-        <p class="mono cta" data-t="b5.cta"></p>
-      </section>
-    </div>
-
+    <!-- Чистый полноэкранный аттракцион: никакой шапки, разделов и подписей.
+         Текст на сайте ровно один — ссылка в самом конце. -->
     <p class="mono scroll-hint" data-t="hero.scroll"></p>
 
-    <!-- Пустые якоря дают высоту прокрутки и точки привязки для тактов. -->
+    <div class="outro">
+      <!-- TODO: подставить настоящую ссылку на канал (см. README) -->
+      <p class="mono cta" data-t="cta"></p>
+    </div>
+
+    <!-- Пустые якоря дают высоту прокрутки. Восемь экранов: столько нужно,
+         чтобы семь актов не спрессовались в рывок. -->
     <main aria-hidden="true">
+      <div class="anchor"></div>
+      <div class="anchor"></div>
+      <div class="anchor"></div>
       <div class="anchor"></div>
       <div class="anchor"></div>
       <div class="anchor"></div>

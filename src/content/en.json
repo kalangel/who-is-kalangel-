@@ -1,16 +1,4 @@
 {
-  "corner.mark": "OBSERVATION",
-  "corner.time": "LOCAL TIME",
-  "hero.scroll": "DOWN",
-  "b1.label": "TOTALITY",
-  "b1.line": "The light is covered. Only the edge remains.",
-  "b2.label": "THE RING BREAKS",
-  "b2.line": "The ring gives way.",
-  "b3.label": "DIAMOND RING",
-  "b3.line": "One point. That is enough.",
-  "b4.label": "THIRD CONTACT",
-  "b4.line": "The light returns all at once.",
-  "b5.label": "OBSERVATION ENDED",
-  "b5.line": "It continues in the channel.",
-  "b5.cta": "TELEGRAM →"
+  "hero.scroll": "SCROLL",
+  "cta": "TELEGRAM →"
 }

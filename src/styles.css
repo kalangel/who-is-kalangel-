@@ -100,38 +100,16 @@ main {
   height: 100svh;
 }
 
-.beats {
+/* Единственный текстовый слой сайта: ссылка в самом конце. */
+.outro {
   position: fixed;
   inset: 0;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.beat {
-  position: absolute;
-  inset: 0;
+  z-index: 2;
   display: flex;
-  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  align-items: flex-start;
-  padding: 0 var(--pad);
   opacity: 0;
-  will-change: opacity, filter;
-}
-
-.beat .label {
-  margin-bottom: 0.9rem;
-}
-
-/* Маска для выезда строк. Проявление одной непрозрачностью — самый дешёвый
-   из приёмов, его видно сразу; текст должен выходить из-под края. */
-.masked {
-  overflow: hidden;
-}
-
-.reveal {
-  display: block;
-  will-change: transform, opacity;
+  pointer-events: none;
 }
 
 /* Зерно. Ровные градиенты без фактуры читаются как рендер, а не как снимок.
@@ -173,7 +151,6 @@ main {
 /* Единственное целевое действие сайта. Мелким серым оно читалось подписью
    к предыдущей строке, а не действием: даём ему вес и собственную линию. */
 .cta {
-  margin-top: 1.8rem;
   padding-top: 0.9rem;
   border-top: 1px solid rgba(255, 138, 31, 0.45);
   font-size: 12px;
@@ -190,18 +167,6 @@ main {
   color: var(--hot);
 }
 
-/* ---------- разметка по краям пластинки ---------- */
-
-.plate {
-  position: fixed;
-  inset: var(--pad);
-  z-index: 3;
-  pointer-events: none;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
 .mono {
   font-family: var(--mono);
   font-size: 10px;
@@ -212,47 +177,12 @@ main {
   line-height: 1.6;
 }
 
-.plate .right {
-  text-align: right;
-}
-
-#clock {
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-
-/* Строка такта: мера в знаках, колонка обязана кончиться раньше кольца —
-   центр принадлежит объекту, а не тексту. */
-.line {
-  font-family: var(--serif);
-  font-weight: 400;
-  font-size: clamp(1.5rem, 3.2vw, 2.6rem);
-  line-height: 1.14;
-  letter-spacing: -0.01em;
-  margin: 0;
-  max-width: min(15ch, calc(50vw - var(--star-r) - var(--pad) * 2));
-  text-wrap: balance;
-}
-
 .scroll-hint {
   position: fixed;
   left: 50%;
   translate: -50% 0;
   bottom: calc(var(--pad) + 0.25rem);
   z-index: 3;
-}
-
-/* На узком экране объект занимает центр целиком — такт уходит под него. */
-@media (max-width: 700px) {
-  .beat {
-    justify-content: flex-end;
-    padding-bottom: calc(var(--pad) + 3.5rem);
-  }
-
-  .line {
-    max-width: 20ch;
-    font-size: clamp(1.5rem, 7vw, 2.1rem);
-  }
 }
 
 /* ---------- доступность ---------- */

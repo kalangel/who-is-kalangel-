@@ -1,5 +1,5 @@
 import './styles.css'
-import { createEclipse, type Eclipse } from './eclipse'
+import { createScene, type Scene } from './scene'
 import { applyContent, detectLang } from './i18n'
 import { bindTimeline } from './timeline'
 import { WORDMARK_SVG } from './wordmark'
@@ -16,10 +16,9 @@ wordmark.innerHTML = WORDMARK_SVG
 
 const canvas = document.querySelector<HTMLCanvasElement>('#stage')!
 
-// Шрифты меняют ширину вордмарка после загрузки, а от неё считается радиус
-// кольца. Пересобираем сцену, когда шрифты доехали, — иначе кольцо встанет
-// по метрике фолбэка.
-const eclipse = createEclipse(canvas, wordmark)
+// Шрифты меняют ширину вордмарка после загрузки. Пересобираем сцену, когда
+// они доехали, — иначе композиция встанет по метрике фолбэка.
+const scene = createScene(canvas, wordmark)
 document.fonts?.ready.then(() => window.dispatchEvent(new Event('resize')))
 
 // Местное время посетителя. Данные бесплатные, эффект — присутствие.
@@ -59,7 +58,7 @@ if (clock) {
   document.body.append(grain)
 }
 
-bindTimeline(eclipse)
+bindTimeline(scene)
 
 // Ссылка на канал ещё не выдана. Пока её нет, CTA остаётся текстом:
 // мёртвая ссылка хуже её отсутствия, а ссылка «куда-нибудь» — хуже обеих.
@@ -79,8 +78,8 @@ if (TELEGRAM_URL) {
 // пространстве имён, а не подброшенный в window россыпью.
 declare global {
   interface Window {
-    kalangel?: { eclipse: Eclipse }
+    kalangel?: { scene: Scene }
   }
 }
 
-window.kalangel = { eclipse }
+window.kalangel = { scene }
