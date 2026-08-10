@@ -1,5 +1,5 @@
 import './styles.css'
-import { createEclipse } from './eclipse'
+import { createEclipse, type Eclipse } from './eclipse'
 import { applyContent, detectLang } from './i18n'
 import { WORDMARK_SVG } from './wordmark'
 
@@ -46,4 +46,14 @@ if (clock) {
 // за счёт вращения короны, но по скроллу не меняется. Это ожидаемое
 // состояние, а не недоделка.
 // ─────────────────────────────────────────────────────────────────────
-Object.assign(window, { eclipse })
+
+// Точка входа не импортируется, поэтому единственный способ отдать рендер
+// файлу с таймлайном — объявленный глобал. Именно объявленный: с типом и
+// в своём пространстве имён, а не подброшенный в window россыпью.
+declare global {
+  interface Window {
+    kalangel?: { eclipse: Eclipse }
+  }
+}
+
+window.kalangel = { eclipse }

@@ -46,6 +46,16 @@ export function createEclipse(canvas: HTMLCanvasElement, wordmark: HTMLElement):
   let raf = 0
   let start = performance.now()
 
+  // Направление, откуда утекает свет. Единичный вектор.
+  // Посетитель водит указателем или пальцем — тело смещается против движения,
+  // и свет прорывается с противоположной стороны. Это единственная механика
+  // на странице: без неё кадр у всех одинаковый.
+  let aimX = -0.86
+  let aimY = -0.5
+  let curX = aimX
+  let curY = aimY
+  let steered = false
+
   function measure() {
     dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR)
     w = canvas.clientWidth
@@ -61,8 +71,24 @@ export function createEclipse(canvas: HTMLCanvasElement, wordmark: HTMLElement):
     discR = (wmW > 40 ? wmW : fallback) * DISC_FROM_WORDMARK
   }
 
+  /** Куда целится свет. Пока посетитель не вмешался — медленный дрейф по кругу. */
+  function aim(t: number) {
+    if (!steered) {
+      aimX = Math.cos(t * 0.16 - 2.6)
+      aimY = Math.sin(t * 0.16 - 2.6) * 0.55
+    }
+    // Догоняем цель, а не прыгаем к ней: рывок за курсором читается дёшево.
+    // При reduced-motion сглаживание выключено — движение только по воле
+    // посетителя, без собственной инерции.
+    const k = reduced ? 1 : 0.045
+    curX += (aimX - curX) * k
+    curY += (aimY - curY) * k
+  }
+
   function draw(now: number) {
     const t = (now - start) / 1000
+    aim(t)
+
     const cx = w / 2
     const cy = h / 2
 
@@ -80,48 +106,58 @@ export function createEclipse(canvas: HTMLCanvasElement, wordmark: HTMLElement):
     const field = discR * CORONA_SPREAD
     ctx.globalCompositeOperation = 'lighter'
 
+    // Корона съезжает в сторону света, тело — против. Смещения крошечные
+    // (проценты радиуса), но именно они делают корону несимметричной, а кадр —
+    // не «отрисованным по циркулю».
+    const glowOff = discR * 0.06
+    const bodyOff = discR * 0.045
+
     // Обе копии — масштаб не больше 1. Увеличенная копия уносит свою
     // прозрачную сердцевину за край тела (0.90R * 1.22 = 1.10R), и та
     // читается как ступенчатый круг: жёсткая кромка, растянутая втрое.
-    drawField(cx, cy, field, t * 0.012, 0.85 * glow)
-    drawField(cx, cy, field * 0.92, -t * 0.008, 0.4 * glow)
+    drawField(cx + curX * glowOff, cy + curY * glowOff, field, t * 0.012, 0.85 * glow)
+    drawField(cx - curX * glowOff, cy - curY * glowOff, field * 0.92, -t * 0.008, 0.4 * glow)
 
     // 3. тело — перекрывает внутреннюю часть короны и создаёт жёсткую кромку.
     // Именно от этого перекрытия кольцо выглядит резким.
+    const bx = cx - curX * bodyOff
+    const by = cy - curY * bodyOff
     ctx.globalCompositeOperation = 'source-over'
-    const body = ctx.createRadialGradient(cx, cy, 0, cx, cy, discR)
+    const body = ctx.createRadialGradient(bx, by, 0, bx, by, discR)
     body.addColorStop(0, '#140805')
     body.addColorStop(1, BG)
     ctx.fillStyle = body
     ctx.beginPath()
-    ctx.arc(cx, cy, discR, 0, Math.PI * 2)
+    ctx.arc(bx, by, discR, 0, Math.PI * 2)
     ctx.fill()
 
     // 4. лимб — тонкая ровная линия по всей окружности…
     ctx.globalCompositeOperation = 'lighter'
     ctx.beginPath()
-    ctx.arc(cx, cy, discR, 0, Math.PI * 2)
+    ctx.arc(bx, by, discR, 0, Math.PI * 2)
     ctx.strokeStyle = withAlpha(CORE, 0.55 + 0.35 * totality)
     ctx.lineWidth = 1.2
     ctx.stroke()
 
     // …и яркий сегмент с блумом. Свет утекает с той стороны, откуда тело
     // ещё не закрыло светило, поэтому положение сегмента зависит от фазы.
-    const lead = Math.PI * 0.25 + phase * Math.PI * 1.5
+    // Угол сегмента больше не назначен константой — он и есть направление
+    // света, которым управляет посетитель.
+    const lead = Math.atan2(curY, curX)
     ctx.save()
     // Два прохода: широкий тёплый ореол и узкое горячее ядро поверх него.
     // Один проход давал либо блёклое пятно, либо жёсткую линию без свечения.
     ctx.shadowColor = HOT
     ctx.shadowBlur = discR * 0.5
     ctx.beginPath()
-    ctx.arc(cx, cy, discR, lead - 0.62, lead + 0.62)
+    ctx.arc(bx, by, discR, lead - 0.62, lead + 0.62)
     ctx.strokeStyle = withAlpha(HOT, 0.85)
     ctx.lineWidth = 4
     ctx.stroke()
 
     ctx.shadowBlur = discR * 0.16
     ctx.beginPath()
-    ctx.arc(cx, cy, discR, lead - 0.4, lead + 0.4)
+    ctx.arc(bx, by, discR, lead - 0.4, lead + 0.4)
     ctx.strokeStyle = withAlpha(CORE, 0.95)
     ctx.lineWidth = 2
     ctx.stroke()
@@ -140,6 +176,26 @@ export function createEclipse(canvas: HTMLCanvasElement, wordmark: HTMLElement):
     ctx.drawImage(tex, -size, -size, size * 2, size * 2)
     ctx.restore()
   }
+
+  /**
+   * Указатель или палец задают, куда светит. Нормируем смещение от центра
+   * экрана и разворачиваем: тело уходит от посетителя, свет прорывается
+   * с обратной стороны.
+   */
+  function steer(e: PointerEvent) {
+    const nx = (e.clientX / w) * 2 - 1
+    const ny = (e.clientY / h) * 2 - 1
+    const len = Math.hypot(nx, ny) || 1
+    aimX = -nx / len
+    aimY = -ny / len
+    steered = true
+    if (reduced) draw(performance.now())
+  }
+
+  // passive: слушатель ничего не отменяет, а на тач-скролле неотменяемый
+  // обработчик не блокирует прокрутку.
+  window.addEventListener('pointermove', steer, { passive: true })
+  window.addEventListener('pointerdown', steer, { passive: true })
 
   const ro = new ResizeObserver(() => {
     measure()
@@ -160,6 +216,8 @@ export function createEclipse(canvas: HTMLCanvasElement, wordmark: HTMLElement):
     destroy() {
       cancelAnimationFrame(raf)
       ro.disconnect()
+      window.removeEventListener('pointermove', steer)
+      window.removeEventListener('pointerdown', steer)
     },
   }
 }
