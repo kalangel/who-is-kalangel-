@@ -4,8 +4,8 @@ import { bindTimeline } from './timeline'
 import { buildMark } from './mark'
 import { createRenderer } from './gl/renderer'
 
-/** Канал ещё не выдан. Впиши сюда https://t.me/… и CTA станет ссылкой. */
-const TELEGRAM_URL: string = ''
+/** Единственное действие на сайте. Пусто — CTA останется просто надписью. */
+const TELEGRAM_URL: string = 'https://t.me/kalangelui'
 
 const lang = detectLang()
 document.documentElement.lang = lang
