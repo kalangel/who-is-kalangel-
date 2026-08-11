@@ -27,7 +27,11 @@ const ctx =
   MODE === 'phone'
     ? await browser.newContext({
         viewport: { width: 393, height: 852 },
-        deviceScaleFactor: 3,
+        // Плотность пикселей задаётся снаружи: на софтверном растеризаторе
+        // кадр в 1179×2556 считается минутами, и снимок его не дожидается.
+        // Единица — оценка снизу: клеток на слово выходит меньше, чем на
+        // настоящем телефоне, и если созвездие читается тут, то читается и там.
+        deviceScaleFactor: Number(process.env.SHOTS_DPR || 3),
         isMobile: true,
         hasTouch: true,
       })
@@ -39,7 +43,12 @@ page.on('console', (m) => {
   if (/kalangel|error|Error/.test(t)) console.log('  ·', t)
 })
 
+page.setDefaultNavigationTimeout(180000)
+
 for (const p of PHASES) {
+  // Пустая страница между кадрами: иначе следующая навигация ждёт, пока
+  // отпустит рендер предыдущей сцены, и отваливается по таймауту.
+  await page.goto('about:blank')
   await page.goto(`${BASE}?scale=1&p=${p}`, { waitUntil: 'load' })
   // Кадру нужно время: шейдер тяжёлый, а на softwar'е первый кадр идёт секунды.
   await page.waitForTimeout(6000)
