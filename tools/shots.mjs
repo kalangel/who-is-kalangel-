@@ -42,9 +42,11 @@ page.on('console', (m) => {
 for (const p of PHASES) {
   await page.goto(`${BASE}?scale=1&p=${p}`, { waitUntil: 'load' })
   // Кадру нужно время: шейдер тяжёлый, а на softwar'е первый кадр идёт секунды.
-  await page.waitForTimeout(4200)
+  await page.waitForTimeout(6000)
   const name = `${OUT}/${MODE}-${String(p).replace('.', '_')}.png`
-  await page.screenshot({ path: name })
+  // Софтверный растеризатор считает такой кадр десятками секунд: снимок ждёт
+  // свежий кадр, и тридцати секунд по умолчанию ему не хватает.
+  await page.screenshot({ path: name, timeout: 240000 })
   console.log(name)
 }
 

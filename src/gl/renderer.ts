@@ -286,7 +286,11 @@ export function createRenderer(canvas: HTMLCanvasElement, mark: Mark): Renderer 
 
   const mobile = matchMedia('(pointer: coarse)').matches
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
-  const steps = mobile ? 88 : 160
+  // Бюджет шагов поднят с 88/160. Решение заказчика: детализация важнее
+  // тридцати кадров запаса на телефоне. Коротким бюджетом лучи с
+  // околокритическим прицелом обрывались по счётчику и засчитывались
+  // пойманными — тень раздувалась, а вокруг неё шли ложные кольца.
+  const steps = mobile ? 130 : 200
 
   const pScene = program(gl, sceneFrag.replace('#define STEPS 128', `#define STEPS ${steps}`))
   const pBright = program(gl, brightFrag)
@@ -433,8 +437,8 @@ export function createRenderer(canvas: HTMLCanvasElement, mark: Mark): Renderer 
     // отдать резкость, чем частоту: рывок в скролле заметнее мягкости.
     if (fixedScale) {
       // разрешение закреплено вручную — автоматика молчит
-    } else if (ema > 26 && scale > 0.55) {
-      scale = Math.max(0.55, scale - 0.05)
+    } else if (ema > 26 && scale > 0.7) {
+      scale = Math.max(0.7, scale - 0.05)
       resize()
     } else if (ema < 15 && scale < 1) {
       scale = Math.min(1, scale + 0.02)
