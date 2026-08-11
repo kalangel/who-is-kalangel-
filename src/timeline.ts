@@ -42,13 +42,12 @@ function smoothScroll() {
 }
 
 export function bindTimeline(renderer: Renderer) {
-  smoothScroll()
-
   const wordmark = document.querySelector<HTMLElement>('#wordmark')
   const hint = document.querySelector<HTMLElement>('.scroll-hint')
   const outro = document.querySelector<HTMLElement>('.outro')
 
-  scroll((p: number) => {
+  /** Кадр по фазе: `phase` гасит DOM ровно так же, как это делает прокрутка. */
+  const apply = (p: number) => {
     renderer.setPhase(p)
 
     // Вордмарк живёт только в первом акте, внутри тени. Дальше имя исчезает
@@ -70,5 +69,17 @@ export function bindTimeline(renderer: Renderer) {
       outro.style.pointerEvents = on > 0.6 ? 'auto' : 'none'
       outro.style.transform = `scale(${0.94 + on * 0.06})`
     }
-  })
+  }
+
+  // Отладочный крючок: ?p=0.74 закрепляет фазу. Нужен для съёмки — иначе
+  // каждый кадр раскадровки приходится ловить прокруткой, а с инерцией лениса
+  // одно и то же число дважды не поймать.
+  const pinned = new URLSearchParams(location.search).get('p')
+  if (pinned !== null && Number.isFinite(Number(pinned))) {
+    apply(clamp01(Number(pinned)))
+    return
+  }
+
+  smoothScroll()
+  scroll(apply)
 }
