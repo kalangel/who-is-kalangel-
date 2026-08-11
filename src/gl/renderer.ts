@@ -332,7 +332,10 @@ export function createRenderer(canvas: HTMLCanvasElement, mark: Mark): Renderer 
   const pinned = Number(new URLSearchParams(location.search).get('scale'))
   const fixedScale = pinned > 0.2 && pinned <= 1 ? pinned : 0
 
-  let scale = fixedScale || (mobile ? 0.85 : 1)
+  // Стартуем не с единицы. Автоматике нужен десяток кадров, чтобы заметить
+  // просадку, и с поднятым бюджетом шагов эти кадры — заметный рывок на самом
+  // входе. Вверх масштаб доезжает за те же десять кадров, но незаметно.
+  let scale = fixedScale || (mobile ? 0.8 : 0.85)
   let fov0 = 0.55
   let markHalf = 0.42
   let markDensity = 190
