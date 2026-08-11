@@ -78,6 +78,8 @@ body {
   color: var(--core);
   z-index: 2;
   pointer-events: none;
+  /* Значения ставит таймлайн покадрово — переход здесь только помешал бы. */
+  will-change: opacity, transform, filter;
 }
 
 #wordmark svg,
@@ -110,52 +112,41 @@ main {
   justify-content: center;
   opacity: 0;
   pointer-events: none;
+  will-change: opacity, transform;
 }
 
-/* Зерно. Ровные градиенты без фактуры читаются как рендер, а не как снимок.
-   Плитка генерируется в рантайме — ни одного лишнего запроса. */
-.grain {
-  position: fixed;
-  inset: -50%;
-  z-index: 4;
-  pointer-events: none;
-  opacity: 0.055;
-  mix-blend-mode: overlay;
-  background-repeat: repeat;
-  animation: grain-jitter 0.7s steps(5) infinite;
+/* Сцены нет — WebGL2 не поднялся. Первый экран остаётся читаемым: марка на
+   фоне, ссылка внизу. Пустой чёрный экран выглядел бы поломкой. */
+.fallback #stage {
+  display: none;
 }
 
-/* Плёночное зерно дёргается, а не ползёт: плавный сдвиг читается как
-   текстура, елозящая по экрану. */
-@keyframes grain-jitter {
-  0% {
-    transform: translate(0, 0);
-  }
-  20% {
-    transform: translate(-4%, 3%);
-  }
-  40% {
-    transform: translate(3%, -5%);
-  }
-  60% {
-    transform: translate(-6%, -2%);
-  }
-  80% {
-    transform: translate(5%, 4%);
-  }
-  100% {
-    transform: translate(0, 0);
-  }
+.fallback .outro {
+  opacity: 1;
+  pointer-events: auto;
+  align-items: flex-end;
+  padding-bottom: calc(var(--pad) + 2rem);
 }
 
-/* Единственное целевое действие сайта. Мелким серым оно читалось подписью
-   к предыдущей строке, а не действием: даём ему вес и собственную линию. */
+.fallback .scroll-hint {
+  display: none;
+}
+
+/* Зерно, виньетка, аберрация и свечение живут в шейдере сведения
+   (src/gl/composite.frag.glsl). Накладывать их ещё и слоем поверх — значит
+   получить два разных зерна в одном кадре. */
+
+/* Единственное целевое действие сайта. Оно стоит внутри горизонта событий,
+   когда в кадре уже не осталось ничего другого, — поэтому ему можно дать
+   вес, который в начале выглядел бы криком. */
 .cta {
-  padding-top: 0.9rem;
-  border-top: 1px solid rgba(255, 138, 31, 0.45);
-  font-size: 12px;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 138, 31, 0.5);
+  font-size: clamp(13px, 2.6vw, 17px);
+  letter-spacing: 0.34em;
   color: var(--core);
   pointer-events: auto;
+  text-shadow: 0 0 24px rgba(255, 138, 31, 0.55);
 }
 
 .cta a {

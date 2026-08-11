@@ -10,10 +10,12 @@
  * Начертание слова «kalangel» набрано серифом-заменителем и НЕ повторяет
  * оригинальную готическую отрисовку.
  *
- * Чтобы поставить настоящий: положить `wordmark.svg` в `public/` и заменить
- * содержимое #wordmark на <img src="./wordmark.svg" alt="kalangel">.
- * Ширину задаёт CSS-переменная --wm-w; радиус кольца пересчитается сам.
+ * Чтобы поставить настоящий: положить `wordmark.svg` в `public/`. Он подхватится
+ * сам — и в вёрстке, и в маске созвездия (`mark.ts`). Требование к файлу одно:
+ * текст переведён в кривые, иначе растеризация в маску потеряет шрифт.
  */
+
+export const MARK_VIEWBOX: [number, number] = [800, 260]
 
 /** Четырёхлучевая звезда: вертикальные лучи длинные, горизонтальные короткие. */
 const star = (cx: number, cy: number, v: number, h: number) =>
@@ -23,14 +25,29 @@ const star = (cx: number, cy: number, v: number, h: number) =>
    C ${cx - h * 0.08} ${cy + v * 0.3} ${cx - h * 0.3} ${cy + v * 0.08} ${cx - h} ${cy}
    C ${cx - h * 0.3} ${cy - v * 0.08} ${cx - h * 0.08} ${cy - v * 0.3} ${cx} ${cy - v} Z`
 
+const box = (x: number, y: number, w: number, h: number) =>
+  `M ${x} ${y} h ${w} v ${h} h ${-w} Z`
+
+export const MARK_PATHS: string[] = [
+  star(400, 130, 128, 62),
+  star(126, 130, 34, 42),
+  star(674, 130, 34, 42),
+  box(52, 58, 7, 144),
+  box(741, 58, 7, 144),
+]
+
+export const MARK_TEXT = {
+  text: 'kalangel',
+  x: 400,
+  y: 152,
+  size: 128,
+  font: `'Prata', Georgia, serif`,
+}
+
 export const WORDMARK_SVG = `
-<svg viewBox="0 0 800 260" role="img" aria-label="kalangel" fill="currentColor">
-  <path d="${star(400, 130, 128, 62)}"/>
-  <path d="${star(126, 130, 34, 42)}"/>
-  <path d="${star(674, 130, 34, 42)}"/>
-  <rect x="52" y="58" width="7" height="144"/>
-  <rect x="741" y="58" width="7" height="144"/>
-  <text x="400" y="152" text-anchor="middle"
-        font-family="'Prata', Georgia, serif"
-        font-size="128" letter-spacing="2">kalangel</text>
+<svg viewBox="0 0 ${MARK_VIEWBOX[0]} ${MARK_VIEWBOX[1]}" role="img" aria-label="kalangel" fill="currentColor">
+  ${MARK_PATHS.map((d) => `<path d="${d}"/>`).join('\n  ')}
+  <text x="${MARK_TEXT.x}" y="${MARK_TEXT.y}" text-anchor="middle"
+        font-family="${MARK_TEXT.font}"
+        font-size="${MARK_TEXT.size}" letter-spacing="2">${MARK_TEXT.text}</text>
 </svg>`

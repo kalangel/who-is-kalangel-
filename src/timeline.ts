@@ -1,28 +1,32 @@
 /**
- * Скролл-режиссура. Motion — единственный, кто знает про скролл;
- * сцена знает только число. Связь одна: scene.setPhase(p).
+ * Скролл-режиссура. Страница — не лента секций, а скраббер: сцена приколочена
+ * к экрану, прокрутка проматывает по ней время. Высоту дают пустые якоря.
  *
- * Страница — не лента секций, а скраббер: сцена приколочена к экрану,
- * скролл проматывает по ней время. Высоту прокрутки дают пустые якоря.
+ * Единственная связь со сценой — `setPhase(p)`. Всё остальное, что живёт в
+ * DOM (вордмарк, подсказка, ссылка), гасится и зажигается здесь же, по тому
+ * же числу: два независимых источника правды рано или поздно разъезжаются.
  */
 
 import Lenis from 'lenis'
-import { animate, scroll } from 'motion'
-import type { Scene } from './scene'
+import { scroll } from 'motion'
+import type { Renderer } from './gl/renderer'
 
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v)
+
+function S(a: number, b: number, x: number) {
+  const t = clamp01((x - a) / (b - a || 1e-6))
+  return t * t * (3 - 2 * t)
+}
 
 /**
  * Инерционный скролл. Не украшение: нативная прокрутка идёт скачками по
  * несколько десятков пикселей, и таймлайн, привязанный к ней, дёргается —
  * тело затмения прыгает вместо движения.
- *
- * Lenis прокручивает страницу по-настоящему, поэтому scroll() из motion
- * работает без переходников.
  */
 function smoothScroll() {
   if (reduced) return
-
   const lenis = new Lenis({
     duration: 1.15,
     easing: (t: number) => 1 - Math.pow(1 - t, 3.2),
@@ -30,7 +34,6 @@ function smoothScroll() {
     // На телефоне своя инерция, поверх неё сглаживание ощущается залипанием.
     syncTouch: false,
   })
-
   const raf = (time: number) => {
     lenis.raf(time)
     requestAnimationFrame(raf)
@@ -38,37 +41,34 @@ function smoothScroll() {
   requestAnimationFrame(raf)
 }
 
-export function bindTimeline(scene: Scene) {
+export function bindTimeline(renderer: Renderer) {
   smoothScroll()
 
-  const anchors = Array.from(document.querySelectorAll<HTMLElement>('.anchor'))
-
-  // Прогресс всей страницы → фаза сцены. Больше связей нет.
-  scroll((progress: number) => scene.setPhase(progress))
-
-  // Подсказка нужна только пока не начали прокручивать.
+  const wordmark = document.querySelector<HTMLElement>('#wordmark')
   const hint = document.querySelector<HTMLElement>('.scroll-hint')
-  if (hint && anchors[0]) {
-    scroll(animate(hint, { opacity: [1, 0] }), {
-      target: anchors[0],
-      offset: [
-        [0.5, 0.5],
-        [0.5, 0.1],
-      ],
-    })
-  }
-
-  // Ссылка проявляется на схлопывании, когда на экране уже почти ничего нет.
   const outro = document.querySelector<HTMLElement>('.outro')
-  const last = anchors[anchors.length - 1]
-  if (outro && last) {
-    scroll(animate(outro, { opacity: [0, 0, 1] }), {
-      target: last,
-      offset: [
-        [0.5, 1],
-        [0.5, 0.35],
-        [0.5, 0],
-      ],
-    })
-  }
+
+  scroll((p: number) => {
+    renderer.setPhase(p)
+
+    // Вордмарк живёт только в первом акте, внутри тени. Дальше имя исчезает
+    // вместе с ответом — и возвращается уже созвездием, но это рисует шейдер.
+    if (wordmark) {
+      const out = S(0.045, 0.115, p)
+      wordmark.style.opacity = String(1 - out)
+      wordmark.style.transform = `scale(${1 + out * 0.5})`
+      wordmark.style.filter = `blur(${out * 14}px)`
+    }
+
+    if (hint) hint.style.opacity = String(1 - S(0.004, 0.03, p))
+
+    // Ссылка проявляется, когда горизонт уже закрыл кадр и смотреть больше
+    // не на что. Это единственное действие на сайте.
+    if (outro) {
+      const on = S(0.955, 0.995, p)
+      outro.style.opacity = String(on)
+      outro.style.pointerEvents = on > 0.6 ? 'auto' : 'none'
+      outro.style.transform = `scale(${0.94 + on * 0.06})`
+    }
+  })
 }
