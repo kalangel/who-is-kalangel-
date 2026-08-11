@@ -3,7 +3,6 @@ import { applyContent, detectLang } from './i18n'
 import { bindTimeline } from './timeline'
 import { buildMark } from './mark'
 import { createRenderer } from './gl/renderer'
-import { WORDMARK_SVG } from './wordmark'
 
 /** Канал ещё не выдан. Впиши сюда https://t.me/… и CTA станет ссылкой. */
 const TELEGRAM_URL: string = ''
@@ -13,7 +12,6 @@ document.documentElement.lang = lang
 applyContent(lang)
 
 const wordmark = document.querySelector<HTMLElement>('#wordmark')!
-wordmark.innerHTML = WORDMARK_SVG
 
 const cta = document.querySelector<HTMLElement>('.cta')!
 if (TELEGRAM_URL) {
@@ -33,6 +31,12 @@ const canvas = document.querySelector<HTMLCanvasElement>('#stage')!
  * в рисунке, а половина ещё нет.
  */
 buildMark().then((mark) => {
+  // Марка в вёрстке и маска созвездия — из одного источника. Разойтись они не
+  // могут по построению: в первом акте зритель видит ровно тот рисунок,
+  // который потом соберётся из звёзд.
+  wordmark.replaceChildren(mark.node)
+  document.documentElement.dataset.mark = mark.source
+
   try {
     const renderer = createRenderer(canvas, mark)
     bindTimeline(renderer)
