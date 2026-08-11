@@ -55,12 +55,14 @@ interface Shot {
   yaw: number
   fov: number
   hole: boolean
+  lens: number
   disk: number
   glow: number
   limb: number
   swirl: number
   skyD: number
   skyG: number
+  nebula: number
   mark: number
   focus: number
   starR: number
@@ -143,14 +145,18 @@ function direct(p: number, t: number, fov0: number): Shot {
   // звёзд набирал последний слой (их у слоя ∼ плотности в квадрате), и набор
   // укладывался в один экран прокрутки — тот самый скачок со снимков.
   let skyD = mix(1.05, 1.4, S(0.18, 0.46, p))
-  skyD = mix(skyD, 2.3, S(0.48, 0.62, p))
-  skyD = mix(skyD, 3.3, S(0.6, 0.74, p))
-  skyD = mix(skyD, 4.2, S(0.72, 0.86, p))
-  skyD = mix(skyD, 4.8, S(0.84, 0.96, p))
+  skyD = mix(skyD, 2.6, S(0.48, 0.62, p))
+  skyD = mix(skyD, 4.0, S(0.6, 0.74, p))
+  skyD = mix(skyD, 6.4, S(0.72, 0.86, p))
+  skyD = mix(skyD, 9.0, S(0.84, 0.96, p))
 
   let skyG = mix(0.55, 0.25, S(0.1, 0.3, p))
-  skyG = mix(skyG, 0.9, S(0.5, 0.66, p))
-  skyG = mix(skyG, 1.15, S(0.68, 0.88, p))
+  skyG = mix(skyG, 1.05, S(0.5, 0.66, p))
+  skyG = mix(skyG, 1.5, S(0.68, 0.9, p))
+
+  // Туманность. Под дырой её почти нет, к звёздным актам небо разгорается:
+  // оно должно светить, а не держать точки на чёрном.
+  const nebula = mix(1.0, 3.4, S(0.58, 0.9, p))
 
   // ---- звезда-гигант ------------------------------------------------------
   // Единица здесь — высота кадра целиком: в шейдере uv нормируется на неё,
@@ -167,22 +173,25 @@ function direct(p: number, t: number, fov0: number): Shot {
   // ---- созвездие ----------------------------------------------------------
   // Рисунок должен успеть сложиться и постоять один экран сам по себе: если
   // дыра приходит на не дочитанное созвездие, ник никто не разберёт.
-  const mark = S(0.72, 0.84, p)
+  // Окно длинное: рисунок собирается позвёздно, и на коротком окне вся
+  // россыпь загорается почти разом — смотреть не на что.
+  const mark = S(0.68, 0.86, p)
 
   // Фон отступает, пока читается имя, и возвращается к финалу: закрученные
   // дырой звёзды — половина того, ради чего сделан последний акт.
-  const focus = S(0.74, 0.86, p) * (1 - S(0.9, 0.97, p))
+  const focus = 0.72 * S(0.72, 0.86, p) * (1 - S(0.9, 0.97, p))
 
   let hole = p < 0.508
   let swirl = 0
+  let lens = 1
 
   // ---- акт VIII: дыра возвращается и выпивает созвездие --------------------
   // Порог здесь — не начало акта, а момент, когда дыра ВКЛЮЧАЕТСЯ в кадр. Она
   // включается заметно раньше, чем становится видна: на пятистах радиусах её
   // тень меньше звезды. Иначе разом менялся способ съёмки — небо без линзы на
   // небо с линзой, — и это читалось скачком, а не приближением.
-  if (p > 0.855) {
-    const q = S(0.855, 1.0, p)
+  if (p > 0.845) {
+    const q = S(0.845, 1.0, p)
     hole = true
     // Дыра приходит из глубины кадра точкой и вырастает до всего экрана.
     // Расстояние идёт по логарифму: угловой размер тени обратен дистанции,
@@ -191,19 +200,22 @@ function direct(p: number, t: number, fov0: number): Shot {
     // целиком и финал — просто чёрный экран. На этой дистанции горизонт
     // занимает три четверти высоты, и вокруг него остаётся горящее кольцо,
     // внутри которого и стоит ссылка. Дверь, а не заслонка.
-    dist = emix(520, 9.0, q)
+    dist = emix(700, 9.0, q)
     pitch = mix(0.02, 0.3, q)
     yaw = Math.sin(t * 0.05) * 0.03
     fov = mix(FOV_SKY, 0.78, q)
-    // Диск и кольцо не приходят вместе с дырой: сначала в звёздах появляется
-    // тёмная точка, и только потом она разгорается. Так у приближения есть
-    // отдельный такт, а не одно событие «в кадре стало светло».
+    // Диск не приходит вместе с дырой: сначала в звёздах появляется искра,
+    // и только потом она разгорается. Так у приближения есть отдельный такт,
+    // а не одно событие «в кадре стало светло».
     disk = 0.02 + 2.6 * S(0.18, 0.85, q)
     glow = 0
-    // В финале кольцо снова нужно: пока диск не разгорелся, край тени
-    // обязан быть виден, иначе дыра приходит невидимкой.
-    limb = 0.3 * S(0.04, 0.42, q)
+    // Кольцо горит с первого кадра акта, а не разгорается следом. На семистах
+    // радиусах тень меньше звезды, и без кольца объект попросту невидим: он
+    // «появляется» тогда, когда уже занимает четверть кадра. С кольцом зритель
+    // ведёт глазом искру, которая растёт в кольцо, а кольцо — в горизонт.
+    limb = 0.13 + 0.22 * S(0.06, 0.55, q)
     swirl = 1.3 * S(0, 1, q)
+    lens = S(0, 0.2, q)
   }
 
   let bloom = mix(0.3, 0.46, S(0.25, 0.45, p))
@@ -227,12 +239,14 @@ function direct(p: number, t: number, fov0: number): Shot {
     yaw,
     fov,
     hole,
+    lens,
     disk,
     glow,
     limb,
     swirl,
     skyD,
     skyG,
+    nebula,
     mark,
     focus,
     starR,
@@ -446,6 +460,7 @@ export function createRenderer(canvas: HTMLCanvasElement, mark: Mark): Renderer 
     gl!.uniformMatrix3fv(pScene.u('uCamBasis'), false, basis)
     gl!.uniform1f(pScene.u('uFov'), s.fov)
     gl!.uniform1f(pScene.u('uHoleOn'), s.hole ? 1 : 0)
+    gl!.uniform1f(pScene.u('uLensFade'), s.lens)
     gl!.uniform1f(pScene.u('uDisk'), s.disk)
     gl!.uniform1f(pScene.u('uGlow'), s.glow)
     gl!.uniform1f(pScene.u('uLimb'), s.limb)
@@ -453,6 +468,7 @@ export function createRenderer(canvas: HTMLCanvasElement, mark: Mark): Renderer 
     gl!.uniform3f(pScene.u('uLightDir'), -bz[0], -bz[1], -bz[2])
     gl!.uniform1f(pScene.u('uSkyDensity'), s.skyD)
     gl!.uniform1f(pScene.u('uSkyGain'), s.skyG)
+    gl!.uniform1f(pScene.u('uNebula'), s.nebula)
     gl!.uniform1f(pScene.u('uMarkAmt'), s.mark)
     gl!.uniform1f(pScene.u('uMarkFocus'), s.focus)
     gl!.uniform1f(pScene.u('uMarkHalf'), markHalf)
